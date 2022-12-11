@@ -21,8 +21,11 @@ foreach($html_cards as $htmlCardHeader) {
       $car['link']= $link->href;
     }
 
+    $dummyLink = "https://www.chileautos.cl/vehiculos/detalles/2017-chevrolet-d-max-4wd-2-5/CP-AD-8004647/?Cr=0&gts=CP-AD-8004647&gtsSaleId=CP-AD-8004647&gtsViewType=topspot&rankingType=topspot";
 
-    getCardDataFromDetailUrl($baseUrl.$car['link'],$car);
+//    getCardDataFromDetailUrl($baseUrl.$car['link'],$car);
+    getCardDataFromDetailUrl($dummyLink,$car);
+
     print_r($car);
     exit(1);
 }
@@ -43,12 +46,6 @@ function getCardDataFromDetailUrl($carUrl,&$car ){
     foreach($h1Titulo as $h1) {
       $car['title']= $h1->plaintext;
     }
-
-    //km
-    //$divsKm = $container->find('.key-details-item-title');
-    //foreach($divsKm as $div) {
-     // $car['mileage']= $div->plaintext;
-   // }
 
     //km
     $divsKm = $container->find('.key-details-item-image.key-details-item-type-odometer');
@@ -73,12 +70,46 @@ function getCardDataFromDetailUrl($carUrl,&$car ){
     }
     
 
-       //comments
-       $divscomments = $container->find('.view-more-target');
-       foreach($divscomments as $div) {
-         $car['comments']= $div->firstChild()->plaintext;
-         //$car['mileage']= $div->next_sibling;
-       }
+    //comments
+    $divscomments = $container->find('.view-more-target');
+    foreach($divscomments as $div) {
+      $car['comments']= $div->firstChild()->plaintext;
+      //$car['mileage']= $div->next_sibling;
+    }
+
+
+    //images
+    $divsImages = $container->find('.col-2.gallery-thumbnails');
+    $re = '/(\((?>[^()]+|(?1))*\))/';
+    foreach($divsImages as $divGallery) {
+      $divsThumbs = $divGallery->find('.thumb-small');
+      foreach($divsThumbs as $thumb) {
+        $styleThumb = $thumb->style;
+        preg_match_all($re, $styleThumb, $matches);
+
+        $car['thumbs'][]=$matches[0];  
+      }
+    }
+
+
+    //region - comuna - precio
+    // id sections-contents
+    $divSectionContents = $container->find('div[id=sections-contents]');
+
+    foreach($divSectionContents as $sectionContents) {
+      $divRegion = $sectionContents->find('.row.features-item.features-item-regin');
+      foreach($divRegion as $div) {
+        $car['region']= $div->firstChild()->next_sibling()->plaintext;
+        $car['comuna']= $div->next_sibling()->firstChild()->next_sibling()->plaintext;
+      }
+
+      $divRegion = $sectionContents->find('.row.features-item.features-item-precio');
+      foreach($divRegion as $div) {
+        $car['price']= $div->firstChild()->next_sibling()->plaintext;
+      }
+
+    }
+
 
   }
 
