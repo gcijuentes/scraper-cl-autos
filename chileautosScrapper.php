@@ -1,5 +1,10 @@
 <?php
 require_once ('simpleDOM/simple_html_dom.php');
+require_once ('MySQLConnect.php');
+
+use Database\MySQLConnect as Mysql;
+
+
 
 $baseUrl = 'https://www.chileautos.cl/';
 
@@ -24,6 +29,9 @@ foreach ($html_cards as $htmlCardHeader)
 
     //    getCardDataFromDetailUrl($baseUrl.$car['link'],$car);
     getCardDataFromDetailUrl($dummyLink, $car);
+
+    getBrandId($car);
+    //saveVehicle($car);
 
     print_r($car);
     exit(1);
@@ -132,6 +140,13 @@ function getCardDataFromDetailUrl($carUrl, &$car)
                 {
                     $car['model'] = trim($div->plaintext);
                 }
+
+                //brand
+                $divBrand = $detail->find('.col.features-item-value.features-item-value-marca');
+                foreach ($divBrand as $div)
+                {
+                    $car['brand'] = trim($div->plaintext);
+                }
             }
 
 
@@ -164,3 +179,141 @@ function getHtmlFromUrl($url)
     return str_get_html($response);
 }
 
+
+
+function saveVehicle($car){
+
+  
+  $today = date("yyyy-mm-dd"); 
+
+
+
+  $idBrand = getBrandId($car);
+
+
+  $sqlVehicle = 
+  "INSERT INTO `vehiculo` 
+    (`anio`, 
+    `combustible`, 
+    `comentario`,
+    `created_at`, 
+    `kilometraje`,  
+    `precio`,
+    `tipo`, 
+    `transmision`,
+    `updated_at`,
+    `url`,
+    `ciudad_id`, 
+    `marca_id`,
+    `tipo_vehiculo_id`, 
+    `model`,
+    `provider_id`) 
+    VALUES
+  (". $car['year'] ."
+  ,". $car['fuelType'] ."
+  ,". $car['comments'] ."
+   ,  ".$today.",
+    ". $car['mileage'] ."
+    ,". $car['price'] ."
+    ,". $car['type'] ."
+      ,". $car['type'] ."
+      ,". $car['transmision'] ."
+      ,". $car['link'] ."
+      NULL
+      , ".$idBrand."
+      , NULL
+      , 18490000
+      , NULL
+      , NULL
+      , 'Automático', '2022-07-07', 'renault-arkana-2021_83736235', 'iberocar nos', 15, 9, 2, 'ARKANA', 1);";
+
+
+  if ($mysql->query($sqlVehicle) === TRUE) {
+    echo "New record created successfully";
+  } else {
+    echo "Error: " . $sql . "<br>" . $conn->error;
+  }
+
+
+/*
+INSERT INTO `vehiculo` (`id`, `anio`, `cilindros`, `color`, `combustible`, `comentario`, `consumo`, `created_at`, `detalle`, `estado`, `id_yapo`, `kilometraje`, `litros_motor`, `mail`, `patente`, `precio`, `telefono`, `tipo`, `transmision`, `updated_at`, `url`, `vendedor`, `ciudad_id`, `marca_id`, `tipo_vehiculo_id`, `model`, `provider_id`) VALUES
+(111111111, '2021', NULL, NULL, 'Bencina', 'VALOR PUBLICADO INCLUYE BONO FINANCIAMIENTO SANTANDER, VALOR CONTADO 19.490.000\n\nIvan Mascayano: +569 83964087 \nMonica Gutierrez: +569 78951910 Iberocar.cl - Único en su estado- Real Oportunidad en Seminuevos - Recibimos tu auto en parte de pago - Financiamiento con Santander- Cancela con Tarjetas de crédito o transferencia- Entrega inmediata- Descuentos y Bonos Exclusivos- Calidad y Seguridad. Vendemos marcas como: Jeep, Chevrolet, Chery, Volkswagen, Kia, Hyundai, Suzuki, Toyota, Peugeot , Nissan, Ford, Mazda, MG y más', NULL, '2022-06-08', NULL, NULL, '83736235', 32000, NULL, NULL, NULL, 18490000, NULL, NULL, 'Automático', '2022-07-07', 'renault-arkana-2021_83736235', 'iberocar nos', 15, 9, 2, 'ARKANA', 1);
+*/
+}
+
+function getBrandId($car){
+    $mysql = new Mysql('localhost','root','2544634','soloautos');
+
+    $mysql->connect();
+
+    $sqlBrand = "SELECT * FROM `marca` where marca.nombre_marca = '". strtolower($car['brand'])."';";
+    
+    $idBrand = 0;
+    if ($result = $mysql->query($sqlBrand)) {
+        
+        if($result->num_rows>0){
+            while ($row = mysqli_fetch_row($result)) {
+                 $idBrand = $row[0];
+               }
+               
+        }else{
+            $sqlBrand = "INSERT INTO `marca` (`nombre_marca`) 
+            VALUES('". strtolower($car['brand'])."')";
+    
+            if ($mysql->query($sqlBrand) === TRUE) {
+                $idBrand = $mysql->getLastId();
+               // echo "brand ".$idBrand." was created successfully";
+            } else {
+                echo "Error: " . $sql . "<br>" . $conn->error;
+            }
+        }
+
+        mysqli_free_result($result);
+    }
+
+    return $idBrand;
+}
+
+
+function getCity($car){
+
+
+    $mysql = new Mysql('localhost','root','2544634','soloautos');
+
+    $mysql->connect();
+
+    $sqlCity = "SELECT * FROM `ciudad` WHERE lower(ciudad.comuna_nombre) = 'temuco';";
+    
+    $idCity = 0;
+    if ($result = $mysql->query($sqlCity)) {
+        
+        if($result->num_rows>0){
+            while ($row = mysqli_fetch_row($result)) {
+                 $idCity = $row[0];
+               }
+               
+        }else{
+            $sqlCitySave = "INSERT INTO `marca` (`nombre_marca`) 
+            VALUES('". strtolower($car['brand'])."')";
+    
+            if ($mysql->query($sqlBrand) === TRUE) {
+                $idBrand = $mysql->getLastId();
+               // echo "brand ".$idBrand." was created successfully";
+            } else {
+                echo "Error: " . $sql . "<br>" . $conn->error;
+            }
+        }
+
+        mysqli_free_result($result);
+    }
+
+    return $idCity;
+
+}
+
+function saveImages($car){
+
+}
+
+
+// falta hacer la relacion con ciudad y region
