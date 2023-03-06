@@ -15,8 +15,10 @@ $html_cards = $html->find('.listing-item.card');
 $car = [];
 
 //iteramos cards
+$i=0;
 foreach ($html_cards as $htmlCardHeader)
 {
+    $i++;
 
     //buscamos dentro de la card
     $cardHeaderlinks = $htmlCardHeader->find('a');
@@ -25,16 +27,20 @@ foreach ($html_cards as $htmlCardHeader)
         $car['link'] = $link->href;
     }
 
-    $dummyLink = "https://www.chileautos.cl/vehiculos/detalles/2017-chevrolet-d-max-4wd-2-5/CP-AD-8004647/?Cr=0&gts=CP-AD-8004647&gtsSaleId=CP-AD-8004647&gtsViewType=topspot&rankingType=topspot";
+    $dummyLink = "https://www.chileautos.cl/vehiculos/detalles/2021-chevrolet-captiva-1-5-premier-cvt/CP-AD-8142455/?Cr=0&gts=CP-AD-8142455&gtsSaleId=CP-AD-8142455&gtsViewType=topspot&rankingType=topspot";
 
     //    getCardDataFromDetailUrl($baseUrl.$car['link'],$car);
     getCardDataFromDetailUrl($dummyLink, $car);
 
     getBrandId($car);
-    //saveVehicle($car);
+    saveVehicle($car);
 
-    print_r($car);
-    exit(1);
+    // print_r($car);
+    // exit(1);
+
+    if($i>20){
+        break;
+    }
 }
 
 function getCardDataFromDetailUrl($carUrl, &$car)
@@ -125,7 +131,34 @@ function getCardDataFromDetailUrl($carUrl, &$car)
             }
 
             //type
+            // specifications-version 
+            //multi-collapse collapse show
             $divDetails = $sectionContents->find('div[id=specifications-detalles]');
+            foreach ($divDetails as $detail)
+            {
+                $divCategory = $detail->find('.col.features-item-value.features-item-value-tipo-categoria');
+                foreach ($divCategory as $div)
+                {
+                    $car['type'] = trim($div->plaintext);
+                }
+
+                //model
+                $divModel = $detail->find('.col.features-item-value.features-item-value-modelo');
+                foreach ($divModel as $div)
+                {
+                    $car['model'] = trim($div->plaintext);
+                }
+
+                //brand
+                $divBrand = $detail->find('.col.features-item-value.features-item-value-marca');
+                foreach ($divBrand as $div)
+                {
+                    $car['brand'] = trim($div->plaintext);
+                }
+            }
+
+
+            $divDetails = $sectionContents->find('div[id=specifications-version]');
             foreach ($divDetails as $detail)
             {
                 $divCategory = $detail->find('.col.features-item-value.features-item-value-tipo-categoria');
@@ -225,7 +258,7 @@ function saveVehicle($car){
       , 18490000
       , NULL
       , NULL
-      , 'Automático', '2022-07-07', 'renault-arkana-2021_83736235', 'iberocar nos', 15, 9, 2, 'ARKANA', 1);";
+      , 'Automático', '2022-07-07', 'renault-arkana-2021_83736235', ". $car['model'] .", 15, 9, 2, 'ARKANA', 1);";
 
 
   if ($mysql->query($sqlVehicle) === TRUE) {
@@ -245,6 +278,7 @@ function getBrandId($car){
     $mysql = new Mysql('localhost','root','2544634','soloautos');
 
     $mysql->connect();
+
 
     $sqlBrand = "SELECT * FROM `marca` where marca.nombre_marca = '". strtolower($car['brand'])."';";
     
